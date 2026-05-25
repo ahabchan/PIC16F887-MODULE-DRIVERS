@@ -1,4 +1,4 @@
-//this is .c file for PWM driver BY DEFAULT IT USES PORTC PIN 3
+//this is .c file for PWM driver BY DEFAULT IT USES PORTC PIN 2
 
 #include "pwm_driver.h"
 #include <xc.h>
@@ -13,7 +13,7 @@ void pwm_init(){
       
       PIR1bits.TMR2IF=CLEAR;
       T2CONbits.TMR2ON=SET;
-      TRISC3=CLEAR;
+      TRISC2=CLEAR;
       
       pwm_period(256);
       //CALCULATING POWER IN PWM TERMS
