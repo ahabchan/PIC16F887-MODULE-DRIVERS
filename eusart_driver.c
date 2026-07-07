@@ -1,4 +1,4 @@
-//this is .c file for eusart driver BY DEFAULT IT IS SET TO 2400 BAUD
+//this is .c file for eusart driver
 /*
 void interrupt(){
  if(PIR1.RCIF){
@@ -8,69 +8,74 @@ void interrupt(){
 #include <xc.h>
 #include "eusart_driver.h"
 
-void eusart_init(){
-  TXSTAbits.SYNC=CLEAR; //CLEAR = ASYNCHRONOUS EUSART, SET = SYMCHRONOUS EUSART
-  TXSTAbits.BRGH=CLEAR; //SET= HIGH, CLEAR=LOW
-  BAUDCTLbits.BRG16=CLEAR; //CLEAR= 8 BIT GENERATOR FOR BAUD RATE , SET=16 BIT GENERATOR FOR BAUD RATE
+#define _XTAL_FREQ 4000000
 
-  SPBRG=25; //2400 BITS/SECOND, BAUD RATE=2400
-  RCSTAbits.SPEN=SET; //ENABLE TX AND RX AS SERIAL PORT TERMINAL
+void eusart_init(unsigned long baud) {
+    TXSTAbits.SYNC = 0; //0 = ASYNCHRONOUS EUSART, 1 = SYMCHRONOUS EUSART
+    BAUDCTLbits.BRG16 = 0; //0 = 8 BIT GENERATOR FOR BAUD RATE
+    if (baud >= 9600) {
+        TXSTAbits.BRGH = 1; //1= HIGH
+        SPBRG = (_XTAL_FREQ / (16UL * baud)) - 1;
+    } else {
+        TXSTAbits.BRGH = 0; // low speed
+        SPBRG = (_XTAL_FREQ / (64UL * baud)) - 1;
+    }
+    RCSTAbits.SPEN = 1; //ENABLE TX AND RX AS SERIAL PORT TERMINAL
 
-  TXSTAbits.TXEN=SET; //ENABLES TRASMITION
+    TXSTAbits.TXEN = 1; //ENABLES TRANSMISSION
+    RCSTAbits.CREN = 1;
 }
 
-void eusart_send(unsigned char *package){
-//STABILSHING COMMUNICATION
-   TXREG=DUMMY;
-   while(~TXSTAbits.TRMT); //WAIT FOR TSR REGISTER FOR BE READY TO RECEIVE NEW DATA TO BE SEND
-   while(~PIR1bits.TXIF); //WAIT FOR THE TXREG FOR BE READY TO RECEIVE NEW DATA TO BE HOLD
-//STARTING DATA TRANSMISSION
-  while(1){
-   TXREG=*package;   //SENDING CHARACTER TO THE TRANSMITTER REGISTER
-   package+=1;       //INCREMENTING THE POINTER IN 1st ADDRES FOR READING NEXT CHARACTER
-   if(*package == END) break;
-   while(~TXSTAbits.TRMT); //WAIT FOR TSR REGISTER FOR BE READY TO RECEIVE NEW DATA TO BE SEND
-   while(~PIR1bits.TXIF); //WAIT FOR THE TXREG FOR BE READY TO RECEIVE NEW DATA TO BE HOLD
-   }
+void eusart_send(unsigned char *package) {
+    //STARTING DATA TRANSMISSION
+    while (*package != '\0') {
+        while (*package){
+            while (!PIR1bits.TXIF); //WAIT FOR THE TXREG FOR BE READY TO RECEIVE NEW DATA TO BE HOLD
+            TXREG = *package++; //SENDING CHARACTER TO THE TRANSMITTER REGISTER
+        }
+    }
 }
 
-void eusart_sendc(unsigned char c){
-//STARTING DATA TRANSMISSION
-   TXREG=c;   //SENDING CHARACTER TO THE TRANSMITTER REGISTER
-   while(~TXSTAbits.TRMT); //WAIT FOR TSR REGISTER FOR BE READY TO RECEIVE NEW DATA TO BE SEND
-   while(~PIR1bits.TXIF); //WAIT FOR THE TXREG FOR BE READY TO RECEIVE NEW DATA TO BE HOLD
+void eusart_sendc(unsigned char c) {
+    //STARTING DATA TRANSMISSION
+    while (!PIR1bits.TXIF); //WAIT FOR THE TXREG FOR BE READY TO RECEIVE NEW DATA TO BE HOLD
+    TXREG = c; //SENDING CHARACTER TO THE TRANSMITTER REGISTER
 
 }
 
-void eusart_sendn(unsigned char number){
+void eusart_sendn(unsigned char number) {
+    char digits[3];
 
- unsigned int i=0;
- numb[0]=0;numb[1]=0;numb[2]=0;
- //SPLITTING
- while(number>=100){
-   numb[0]+=1;
-   number-=100;
- }
-  while(number>=10){
-   numb[1]+=1;
-   number-=10;
- }
- numb[2]=number;
- //WRITE DATA
- if(numb[0]==0) i++;
- if(numb[1]==0) i++;
- while(i<3){
- //STARTING DATA TRANSMISSION
-   TXREG=((0x30|numb[i]));   //SENDING CHARACTER TO THE TRANSMITTER REGISTER
-   while(~TXSTAbits.TRMT); //WAIT FOR TSR REGISTER FOR BE READY TO RECEIVE NEW DATA TO BE SEND
-   while(~PIR1bits.TXIF); //WAIT FOR THE TXREG FOR BE READY TO RECEIVE NEW DATA TO BE HOLD
-   i++;
- }
- }
+    digits[0] = (number / 100) + '0';
+    digits[1] = ((number / 10) % 10) + '0';
+    digits[2] = (number % 10) + '0';
 
-void eusart_receiver(unsigned char choose){
-  PIE1bits.RCIE=1; //ENABLES RECEPTION INTERRUPTION
-  INTCONbits.PEIE=1; //ENABLES PERIPHERIAL INTERRUPT
-  INTCONbits.GIE=1; //ENABLES GLOBAL INTERRUPTS
-  RCSTAbits.CREN=choose; //RECEPTION ENABLE
+    unsigned char i = 0;
+
+    if (digits[0] == '0') i++;
+    if (digits[1] == '0') i++;
+
+    while (i < 3) {
+        while (!PIR1bits.TXIF);
+        TXREG = digits[i++];
+    }
+}
+
+unsigned char eusart_read(void)
+{
+    // Wait until a byte is received
+    while(!PIR1bits.RCIF);
+    // Handle overrun error (VERY IMPORTANT)
+    if(RCSTAbits.OERR)
+    {
+        RCSTAbits.CREN = 0;
+        RCSTAbits.CREN = 1;
+    }
+    // Return received byte (reading RCREG clears RCIF)
+    return RCREG;
+}
+
+unsigned char eusart_available(void)
+{
+    return PIR1bits.RCIF;
 }
