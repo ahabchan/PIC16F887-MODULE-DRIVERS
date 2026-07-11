@@ -2,8 +2,6 @@
 #ifndef EUSART_DRIVER_H
 #define EUSART_DRIVER_H
 
-#define SET 1
-#define CLEAR 0
 #define END '/' //USE THIS CHARACTER FOR SET THE LAST CHARACTER OF A STRING
 #define DUMMY 0x00
 
