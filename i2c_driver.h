@@ -9,8 +9,6 @@
 #define I2C_MODE SSPCON.SSPEN
 #define MASTER 1
 #define SLAVE 0
-#define SET   1
-#define CLEAR 0
 #define READ  1
 #define WRITE 0
 
