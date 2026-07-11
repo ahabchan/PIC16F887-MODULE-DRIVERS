@@ -1,4 +1,4 @@
-//this is .c file for eusart driver
+//this is .c file for usart driver
 /*
 void interrupt(){
  if(PIR1.RCIF){
@@ -6,11 +6,11 @@ void interrupt(){
  }
 }   */
 #include <xc.h>
-#include "eusart_driver.h"
+#include "usart_driver.h"
 
 #define _XTAL_FREQ 4000000
 
-void eusart_init(unsigned long baud) {
+void usart_init(unsigned long baud) {
     TXSTAbits.SYNC = 0; //0 = ASYNCHRONOUS EUSART, 1 = SYMCHRONOUS EUSART
     BAUDCTLbits.BRG16 = 0; //0 = 8 BIT GENERATOR FOR BAUD RATE
     if (baud >= 9600) {
@@ -26,7 +26,7 @@ void eusart_init(unsigned long baud) {
     RCSTAbits.CREN = 1;
 }
 
-void eusart_send(unsigned char *package) {
+void usart_send(unsigned char *package) {
     //STARTING DATA TRANSMISSION
     while (*package != '\0') {
         while (*package){
@@ -36,14 +36,14 @@ void eusart_send(unsigned char *package) {
     }
 }
 
-void eusart_sendc(unsigned char c) {
+void usart_sendc(unsigned char c) {
     //STARTING DATA TRANSMISSION
     while (!PIR1bits.TXIF); //WAIT FOR THE TXREG FOR BE READY TO RECEIVE NEW DATA TO BE HOLD
     TXREG = c; //SENDING CHARACTER TO THE TRANSMITTER REGISTER
 
 }
 
-void eusart_sendn(unsigned char number) {
+void usart_sendn(unsigned char number) {
     char digits[3];
 
     digits[0] = (number / 100) + '0';
@@ -61,7 +61,7 @@ void eusart_sendn(unsigned char number) {
     }
 }
 
-unsigned char eusart_read(void)
+unsigned char usart_read(void)
 {
     // Wait until a byte is received
     while(!PIR1bits.RCIF);
@@ -75,7 +75,7 @@ unsigned char eusart_read(void)
     return RCREG;
 }
 
-unsigned char eusart_available(void)
+unsigned char usart_available(void)
 {
     return PIR1bits.RCIF;
 }
