@@ -1,8 +1,6 @@
 //this is .h file for keypad driver
 unsigned int input_value = 0;
 char column = 0, row = 0, button=0;
-#define SET 1
-#define CLEAR 0
 #define TRUE 1
 #define FALSE 0
 
