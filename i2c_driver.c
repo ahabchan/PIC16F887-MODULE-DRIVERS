@@ -6,8 +6,8 @@ void i2c_init(){
   SSPCON2 = 0x00;
   SSPADD = (4000000 / (4 * 100000)) - 1; // SET TO 100KHZ
   SSPSTAT = 0x00;
-  TRISC.B3 = SET;
-  TRISC.B4 = SET;
+  TRISC.B3 = 1;
+  TRISC.B4 = 1;
 }
 
 void i2c_start(unsigned char ADDRESS, unsigned char DO){
@@ -15,11 +15,11 @@ void i2c_start(unsigned char ADDRESS, unsigned char DO){
      ADDRESS = ADDRESS<<1;                 //SETTING ADDRESS PROPER FORMAT
      START_COM;                            //START CONDITION IS SET
      while(~PIR1.SSPIF);                   //THIS CONFIRMS THE START CONDITION WAS SET
-     PIR1.SSPIF=CLEAR;
+     PIR1.SSPIF=0;
      SSPBUF = ADDRESS | DO;                //LOAD ADDRESS AND CLEAR THE LAST BIT BECAUSE OF WRITE MODE
      while(SSPSTAT.BF);                    //WAIT FOR SENDING DATA TO FINISH
      while(~PIR1.SSPIF);                   //WAIT FOR THE NINTH CLOCK CYCLE TO HAPPEN
-     PIR1.SSPIF=CLEAR;
+     PIR1.SSPIF=0;
 }
 
 void i2c_rstart(unsigned char ADDRESS, unsigned char DO){
@@ -27,30 +27,30 @@ void i2c_rstart(unsigned char ADDRESS, unsigned char DO){
      ADDRESS = ADDRESS<<1;                 //SETTING ADDRESS PROPER FORMAT
      REPEATED_START;                       //REPEATED START
      while(~PIR1.SSPIF);                   //THIS CONFIRMS THE START CONDITION WAS SET
-     PIR1.SSPIF=CLEAR;
+     PIR1.SSPIF=0;
      SSPBUF = ADDRESS | DO;                //LOAD ADDRESS AND CLEAR THE LAST BIT BECAUSE OF WRITE MODE
      while(SSPSTAT.BF);                    //WAIT FOR SENDING DATA TO FINISH
      while(~PIR1.SSPIF);                   //WAIT FOR THE NINTH CLOCK CYCLE TO HAPPEN
-     PIR1.SSPIF=CLEAR;
+     PIR1.SSPIF=0;
 }
 
 char i2c_send(unsigned char DATA){        //SET I2C TO  MASTER OR SLAVE
      SSPBUF = DATA;                        //SET THE DATA WE ARE WILLING TO SEND
      while(SSPSTAT.BF);                    //WAIT FOR SENDING DATA TO FINISH
      while(~PIR1.SSPIF);                   //WAIT FOR THE NINTH CLOCK CYCLE TO HAPPEN
-     PIR1.SSPIF=CLEAR;
+     PIR1.SSPIF=0;
      return SSPCON2.ACKSTAT;               //LET KNOW IF ACKNOWLEDGE WAS RECEIVE
 }
 
 char i2c_receive(){
      I2C_RECEIVE;
      while(~PIR1.SSPIF);                    //THIS CONFIRMS THE STOP CONDITION WAS SET
-     PIR1.SSPIF=CLEAR;
+     PIR1.SSPIF=0;
      return SSPBUF;
 }
 
 void i2c_stop(){
      STOP_COM;                              //SET STOP CONDITION
      while(~PIR1.SSPIF);                    //THIS CONFIRMS THE STOP CONDITION WAS SET
-     PIR1.SSPIF=CLEAR;
+     PIR1.SSPIF=0;
 }
